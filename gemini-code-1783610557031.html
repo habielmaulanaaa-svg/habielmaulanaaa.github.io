@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>Dasbor Pribadi Premium</title>
+    <!-- Import Google Sans Font Web Resmi -->
+    <link href="https://fonts.cdnfonts.com/css/google-sans" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Google Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Script Library Canvas Confetti untuk Selebrasi -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        /* Transisi Perpindahan Tab Smooth Bergeser */
+        .tab-content { display: none; opacity: 0; transform: translateY(12px); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        /* Mekanisme Animasi Accordion Meluncur Lembut */
+        .accordion-content { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease; }
+        .accordion-content.open { max-height: 3000px; opacity: 1; }
+        
+        ::-webkit-scrollbar { display: none; }
+        button, [onclick] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        
+        /* Efek Instan Bouncing Nyata Saat Pertama Kali Diklik Jari */
+        button, .nav-btn, .nav-btn-action { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important; }
+        button:active, .nav-btn:active, .nav-btn-action:active { transform: scale(0.93) !important; }
+        
+        /* Mood Selector Animation */
+        .mood-btn { transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .mood-btn.selected { transform: scale(1.25); border-color: #2563eb; background-color: #dbeafe; }
+        .dark .mood-btn.selected { background-color: #1e3a8a; border-color: #3b82f6; }
+
+        /* Toast Notification Slide Animation */
+        #toast-notification { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        /* Shimmer Animation Skeleton Loading */
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        .dark .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+
+        /* Smooth Tag Removal Animation */
+        .category-tag { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .category-tag.removing { opacity: 0; transform: scale(0.5); }
+    </style>
+</head>
+<body ontouchstart="" class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans h-screen flex flex-col overflow-hidden relative transition-colors duration-300">
+
+    <!-- Skeleton Loading Screen Overlay -->
+    <div id="skeleton-loader" class="fixed inset-0 bg-slate-50 dark:bg-slate-900 z-50 flex flex-col p-4 space-y-4 transition-opacity duration-500">
+        <div class="h-14 skeleton rounded-2xl w-full"></div>
+        <div class="h-32 skeleton rounded-2xl w-full"></div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="h-24 skeleton rounded-2xl"></div>
+            <div class="h-24 skeleton rounded-2xl"></div>
+        </div>
+        <div class="h-40 skeleton rounded-2xl w-full"></div>
+    </div>
+
+    <!-- Toast Notification Popup Melayang -->
+    <div id="toast-notification" class="fixed top-5 left-1/2 transform -translate-x-1/2 translate-y-[-100%] opacity-0 bg-slate-800 text-white dark:bg-white dark:text-slate-900 px-4 py-2.5 rounded-full shadow-2xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none transition-all hidden">
+        <i class="fas fa-check-circle text-green-400 dark:text-green-600 text-sm"></i>
+        <span id="toast-message">Pemberitahuan</span>
+    </div>
+
+    <!-- Overlay Latar Belakang Sidebar -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/40 dark:bg-black/60 z-40 hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm"></div>
+
+    <!-- Sidebar Samping dengan Fitur Geser Menutup (Swipe to Close) -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-slate-800 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="bg-blue-600 p-5 text-white flex justify-between items-center shrink-0 shadow-md">
+            <h2 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-layer-group"></i> Menu Ekstra</h2>
+            <button type="button" onclick="toggleSidebar()" class="text-blue-200 hover:text-white text-2xl focus:outline-none"><i class="fas fa-times"></i></button>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <button type="button" onclick="bukaJurnal()" class="w-full flex items-center gap-4 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold border border-slate-100 dark:border-slate-600 shadow-sm focus:outline-none text-sm">
+                <div class="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-500 shadow-inner"><i class="fas fa-book text-sm"></i></div>
+                Jurnal Harian
+            </button>
+            <button type="button" onclick="toggleCalculator()" class="w-full flex items-center gap-4 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold border border-slate-100 dark:border-slate-600 shadow-sm focus:outline-none text-sm">
+                <div class="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-500 shadow-inner"><i class="fas fa-calculator text-sm"></i></div>
+                Kalkulator Alat
+            </button>
+        </nav>
+        
+        <!-- Sektor Pengaturan & Tema di Dasar Sidebar -->
+        <div class="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center mt-auto relative">
+            <div>
+                <button type="button" onclick="toggleSettings()" class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center shadow-inner focus:outline-none relative z-10">
+                    <i class="fas fa-cog text-lg"></i>
+                </button>
+                <div id="settings-menu" class="hidden absolute bottom-16 left-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-2xl p-3 w-56 transition-all z-20">
+                    <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-1">Sistem Info</div>
+                    <div class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-3 px-1 flex items-center gap-1.5"><i class="fas fa-code-branch text-blue-500"></i> HTML v14.3 (Header Fix)</div>
+                    <hr class="border-slate-100 dark:border-slate-700 mb-2">
+                    
+                    <button type="button" onclick="exportData()" class="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition-colors focus:outline-none mb-1">
+                        <i class="fas fa-download mr-1.5 text-blue-500"></i> Backup Data (JSON)
+                    </button>
+                    
+                    <label class="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center mb-2">
+                        <i class="fas fa-upload mr-1.5 text-green-500"></i> Pulihkan Data
+                        <input type="file" accept=".json" onchange="importData(event)" class="hidden">
+                    </label>
+
+                    <hr class="border-slate-100 dark:border-slate-700 mb-2">
+                    <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition-colors focus:outline-none">
+                        <i class="fas fa-trash-alt mr-1.5"></i> Hapus Semua Data
+                    </button>
+                </div>
+            </div>
+            <button type="button" onclick="toggleDarkMode()" class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-yellow-400 flex items-center justify-center shadow-inner focus:outline-none">
+                <i id="icon-moon" class="fas fa-moon text-lg"></i>
+                <i id="icon-sun" class="fas fa-sun hidden text-lg"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Modal Jendela Fitur Kalkulator -->
+    <div id="calc-modal" class="fixed inset-0 bg-black/40 dark:bg-black/60 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 w-72 shadow-2xl border border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-sm text-slate-700 dark:text-slate-200 flex items-center gap-2"><i class="fas fa-calculator text-blue-500"></i> Kalkulator</h3>
+                <button type="button" onclick="toggleCalculator()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm p-1"><i class="fas fa-times"></i></button>
+            </div>
+            <input type="text" id="calc-screen" readonly class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl p-3 text-right text-xl font-bold mb-3 text-slate-800 dark:text-white focus:outline-none tracking-wide shadow-inner">
+            <div class="grid grid-cols-4 gap-2">
+                <button type="button" onclick="pressCalc('C')" class="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 p-3 rounded-xl font-bold text-sm">C</button>
+                <button type="button" onclick="pressCalc('DEL')" class="bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 p-3 rounded-xl font-bold text-sm"><i class="fas fa-backspace"></i></button>
+                <button type="button" onclick="pressCalc('/')" class="bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 p-3 rounded-xl font-bold text-sm">/</button>
+                <button type="button" onclick="pressCalc('*')" class="bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 p-3 rounded-xl font-bold text-sm">*</button>
+                
+                <button type="button" onclick="pressCalc('7')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">7</button>
+                <button type="button" onclick="pressCalc('8')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">8</button>
+                <button type="button" onclick="pressCalc('9')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">9</button>
+                <button type="button" onclick="pressCalc('-')" class="bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 p-3 rounded-xl font-bold text-sm">-</button>
+                
+                <button type="button" onclick="pressCalc('4')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">4</button>
+                <button type="button" onclick="pressCalc('5')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">5</button>
+                <button type="button" onclick="pressCalc('6')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">6</button>
+                <button type="button" onclick="pressCalc('+')" class="bg-slate-100 dark:bg-slate-700 text-blue-600 dark:text-blue-400 p-3 rounded-xl font-bold text-sm flex items-center justify-center">+</button>
+                
+                <button type="button" onclick="pressCalc('1')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">1</button>
+                <button type="button" onclick="pressCalc('2')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">2</button>
+                <button type="button" onclick="pressCalc('3')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">3</button>
+                <button type="button" onclick="pressCalc('=')" class="bg-blue-600 text-white row-span-2 p-3 rounded-xl font-bold text-sm flex items-center justify-center shadow-md shadow-blue-500/20">=</button>
+                
+                <button type="button" onclick="pressCalc('0')" class="bg-slate-100 dark:bg-slate-700 col-span-2 p-3 rounded-xl font-bold text-sm">0</button>
+                <button type="button" onclick="pressCalc('.')" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl font-bold text-sm">.</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header Atas (KUNCI WARNA BIRU DIPERTAHANKAN DI SELURUH MODE) -->
+    <header class="bg-blue-600 text-white p-4 shadow-md z-30 flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-3">
+            <button type="button" onclick="toggleSidebar()" class="text-white hover:text-blue-200 text-xl focus:outline-none"><i class="fas fa-layer-group"></i></button>
+            <h1 class="text-xl font-bold tracking-wide">Dasbor</h1>
+        </div>
+        <div class="w-6"></div>
+    </header>
+
+    <!-- Tombol Melayang Tambah Tugas (FAB) -->
+    <button id="fab-tugas" type="button" onclick="toggleInput('tugas-input-area')" class="hidden fixed bottom-20 right-5 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-500/30 z-30 flex items-center justify-center text-lg focus:outline-none">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Tempat Pemrosesan Halaman Utama -->
+    <main id="main-container" class="flex-1 overflow-y-auto p-4 pb-32 relative z-0">
+        
+        <!-- PANEL: BERANDA -->
+        <div id="beranda" class="tab-content active">
+            <h2 class="text-2xl font-bold mb-4 dark:text-white">Ringkasan Hari Ini</h2>
+            
+            <!-- Kartu Saldo -->
+            <div class="bg-gradient-to-r from-blue-500 to-blue-700 rounded-2xl p-6 text-white mb-4 shadow-md shadow-blue-500/5 relative overflow-hidden">
+                <i class="fas fa-wallet absolute -right-4 -bottom-4 text-7xl opacity-20 transform -rotate-12"></i>
+                <p class="text-blue-100 text-sm mb-1">Total Saldo Tersedia</p>
+                <h3 id="stat-saldo" class="text-3xl font-bold tracking-tight">Rp 0</h3>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-2">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center justify-center text-center dark:bg-slate-800">
+                    <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-2"><i class="fas fa-list-ul"></i></div>
+                    <p id="stat-tugas-aktif" class="text-2xl font-bold text-slate-800 dark:text-white">0</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Tugas Peninjauan</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center justify-center text-center dark:bg-slate-800">
+                    <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center mb-2"><i class="fas fa-check-double"></i></div>
+                    <p id="stat-tugas-selesai" class="text-2xl font-bold text-slate-800 dark:text-white">0</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Tugas Selesai</p>
+                </div>
+            </div>
+
+            <!-- Widget Deadline Dinamis -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mt-4">
+                <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm tracking-wide flex items-center gap-2">
+                    <i class="fas fa-clock text-orange-500"></i> Deadline
+                </h3>
+                <div id="widget-deadline-container" class="space-y-2"></div>
+            </div>
+
+            <!-- Widget Tugas Reguler Dinamis -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mt-4">
+                <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm tracking-wide flex items-center gap-2">
+                    <i class="fas fa-book text-blue-500"></i> Tugas Reguler
+                </h3>
+                <div id="widget-reguler-container" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- PANEL: MANAJEMEN TUGAS -->
+        <div id="tugas" class="tab-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold dark:text-white">Manajemen Tugas</h2>
+                <div class="w-1"></div>
+            </div>
+            <div id="tugas-input-area" class="hidden bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md mb-6 transition-all">
+                <input type="text" id="input-tugas-nama" placeholder="Nama tugas..." class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                <div class="flex gap-2 items-center">
+                    <div class="flex-1 flex items-center bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2">
+                        <i class="far fa-calendar-alt text-slate-400 mr-2 text-sm"></i>
+                        <input type="date" id="input-tugas-deadline" class="w-full bg-transparent dark:text-white text-sm focus:outline-none text-slate-600">
+                    </div>
+                    <button type="button" onclick="tambahTugas()" class="bg-green-500 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-green-600 focus:outline-none">Simpan</button>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <button type="button" onclick="toggleStack('stack-deadline', 'icon-deadline', parseInt(document.getElementById('count-deadline').innerText))" class="w-full bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 p-4 rounded-xl flex justify-between items-center shadow-sm hover:shadow-md focus:outline-none">
+                        <div class="flex items-center gap-2"><i class="fas fa-clock text-orange-500"></i><span class="font-bold">Tugas Deadline (<span id="count-deadline">0</span>)</span></div>
+                        <i id="icon-deadline" class="fas fa-chevron-down text-slate-400 transform transition-transform duration-300 hidden"></i>
+                    </button>
+                    <ul id="stack-deadline" class="accordion-content mt-2 space-y-2 px-1"></ul>
+                </div>
+                <div>
+                    <button type="button" onclick="toggleStack('stack-reguler', 'icon-reguler', parseInt(document.getElementById('count-reguler').innerText))" class="w-full bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 p-4 rounded-xl flex justify-between items-center shadow-sm hover:shadow-md focus:outline-none">
+                        <div class="flex items-center gap-2"><i class="fas fa-book text-blue-500"></i><span class="font-bold">Tugas Reguler (<span id="count-reguler">0</span>)</span></div>
+                        <i id="icon-reguler" class="fas fa-chevron-down text-slate-400 transform transition-transform duration-300 hidden"></i>
+                    </button>
+                    <ul id="stack-reguler" class="accordion-content mt-2 space-y-2 px-1"></ul>
+                </div>
+                <div class="pt-2">
+                    <button type="button" onclick="toggleStack('stack-completed', 'icon-completed', parseInt(document.getElementById('count-completed').innerText))" class="w-full bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 p-4 rounded-xl flex justify-between items-center shadow-sm hover:shadow-md focus:outline-none">
+                        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500"></i><span class="font-bold">Tugas Selesai (<span id="count-completed">0</span>)</span></div>
+                        <i id="icon-completed" class="fas fa-chevron-down text-slate-400 transform transition-transform duration-300 hidden"></i>
+                    </button>
+                    <ul id="stack-completed" class="accordion-content mt-2 space-y-2 px-1"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL: KEUANGAN -->
+        <div id="keuangan" class="tab-content">
+            <h2 class="text-2xl font-bold mb-4 dark:text-white">Kelola Keuangan</h2>
+            
+            <!-- Ringkasan Finansial Masuk & Keluar -->
+            <div class="grid grid-cols-2 gap-3 mb-2">
+                <div class="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-3 flex flex-col">
+                    <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Total Masuk</span>
+                    <span id="stat-total-masuk" class="text-base font-black text-emerald-700 dark:text-emerald-300 mt-1">Rp 0</span>
+                </div>
+                <div class="bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-xl p-3 flex flex-col">
+                    <span class="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Total Keluar</span>
+                    <span id="stat-total-keluar" class="text-base font-black text-rose-700 dark:text-rose-300 mt-1">Rp 0</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar Rasio Finansial Visual -->
+            <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 mb-4">
+                <div class="flex justify-between items-center text-[10px] font-bold text-slate-500 mb-1.5">
+                    <span>PEMASUKAN vs PENGELUARAN</span>
+                    <span id="ratio-text">0% / 0%</span>
+                </div>
+                <div class="w-full bg-slate-100 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden flex">
+                    <div id="bar-masuk" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div>
+                    <div id="bar-keluar" class="bg-rose-500 h-full transition-all duration-500" style="width: 50%"></div>
+                </div>
+            </div>
+
+            <!-- Panel Pembuatan Kategori Kustom -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors mb-4 relative">
+                <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm flex items-center"><i class="fas fa-tags text-blue-500 mr-2"></i>Buat Kategori Kustom</h3>
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="input-kategori-baru" placeholder="Nama kategori baru..." class="flex-1 bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                    <button type="button" onclick="tambahKategoriKustom()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm focus:outline-none">Simpan</button>
+                </div>
+                <div id="list-kategori-kustom" class="flex flex-wrap gap-2 pt-1"></div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 mb-4">
+                <!-- Form Pemasukan -->
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+                    <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm flex items-center"><i class="fas fa-arrow-down text-green-500 mr-2"></i>Pemasukan</h3>
+                    <div class="space-y-2">
+                        <input type="number" id="input-masuk-nominal" placeholder="Nominal (Rp)..." class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors">
+                        <input type="text" id="input-masuk-catatan" placeholder="Alasan / Keterangan..." class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors">
+                        
+                        <select id="input-masuk-kategori" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors">
+                            <option value="Umum">Pilih Kategori...</option>
+                        </select>
+                        
+                        <button type="button" onclick="tambahUang('masuk')" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-sm shadow-sm focus:outline-none">Tambah Pemasukan</button>
+                    </div>
+                </div>
+                <!-- Form Pengeluaran -->
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+                    <h3 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm flex items-center"><i class="fas fa-arrow-up text-red-500 mr-2"></i>Pengeluaran</h3>
+                    <div class="space-y-2">
+                        <input type="number" id="input-keluar-nominal" placeholder="Nominal (Rp)..." class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors">
+                        <input type="text" id="input-keluar-catatan" placeholder="Alasan / Keterangan..." class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors">
+                        
+                        <select id="input-keluar-kategori" class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors">
+                            <option value="Umum">Pilih Kategori...</option>
+                        </select>
+                        
+                        <button type="button" onclick="tambahUang('keluar')" class="w-full bg-red-500 text-white py-2 rounded-lg font-bold text-sm shadow-sm focus:outline-none">Catat Pengeluaran</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tombol Stack Riwayat Transaksi -->
+            <div>
+                <button type="button" onclick="toggleStack('stack-riwayat-keuangan', 'icon-riwayat-keuangan', parseInt(document.getElementById('count-transaksi').innerText))" class="w-full bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 p-4 rounded-xl flex justify-between items-center transition focus:outline-none font-bold text-sm shadow-sm hover:shadow-md">
+                    <div class="flex items-center gap-2"><i class="fas fa-history text-blue-500"></i><span>Riwayat Transaksi (<span id="count-transaksi">0</span>)</span></div>
+                    <i id="icon-riwayat-keuangan" class="fas fa-chevron-down text-slate-400 transform transition-transform duration-300 hidden"></i>
+                </button>
+                <ul id="stack-riwayat-keuangan" class="accordion-content mt-2 space-y-2 px-1"></ul>
+            </div>
+        </div>
+
+        <!-- PANEL: JURNAL -->
+        <div id="jurnal" class="tab-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold dark:text-white">Jurnal Harian</h2>
+                <button type="button" onclick="toggleInput('jurnal-input-area')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm focus:outline-none"><i class="fas fa-pen"></i></button>
+            </div>
+            <div id="jurnal-input-area" class="hidden bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md mb-4 transition-all">
+                
+                <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2 px-1">Bagaimana Suasana Hatimu?</label>
+                <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-xl p-2.5 mb-3 border border-slate-100 dark:border-slate-700 shadow-inner">
+                    <button type="button" onclick="selectMood('😊', this)" class="mood-btn w-10 h-10 text-xl flex items-center justify-center rounded-xl border border-transparent focus:outline-none">😊</button>
+                    <button type="button" onclick="selectMood('🥳', this)" class="mood-btn w-10 h-10 text-xl flex items-center justify-center rounded-xl border border-transparent focus:outline-none">🥳</button>
+                    <button type="button" onclick="selectMood('😐', this)" class="mood-btn w-10 h-10 text-xl flex items-center justify-center rounded-xl border border-transparent focus:outline-none">😐</button>
+                    <button type="button" onclick="selectMood('😫', this)" class="mood-btn w-10 h-10 text-xl flex items-center justify-center rounded-xl border border-transparent focus:outline-none">😫</button>
+                    <button type="button" onclick="selectMood('😴', this)" class="mood-btn w-10 h-10 text-xl flex items-center justify-center rounded-xl border border-transparent focus:outline-none">😴</button>
+                </div>
+
+                <input type="text" id="jurnal-judul" placeholder="Judul catatan..." class="w-full font-bold border-b border-slate-200 dark:border-slate-600 pb-2 mb-3 focus:outline-none text-sm bg-transparent dark:text-white transition-colors">
+                <textarea id="jurnal-isi" rows="4" placeholder="Ceritakan harimu..." class="w-full bg-slate-50 dark:bg-slate-700 dark:text-white border border-slate-200 dark:border-slate-600 rounded-xl p-3 mb-3 focus:outline-none text-sm resize-none transition-colors"></textarea>
+                <button type="button" onclick="tambahJurnal()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-md focus:outline-none">Simpan Catatan</button>
+            </div>
+            <div id="daftar-jurnal" class="space-y-4"></div>
+            <div class="text-center text-slate-400 dark:text-slate-500 py-6 bg-white dark:bg-slate-800 rounded-xl text-sm border border-slate-200 dark:border-slate-700 transition-colors hidden" id="jurnal-kosong-teks">Kosong</div>
+        </div>
+    </main>
+
+    <!-- Navigasi Bawah Tipis -->
+    <nav class="bg-white border-t border-slate-200 dark:bg-slate-900 dark:border-slate-800 flex justify-around items-center p-1.5 fixed bottom-0 w-full shrink-0 z-20 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.03)] transition-colors duration-300">
+        <button type="button" onclick="switchTab('beranda')" id="nav-beranda" class="nav-btn flex flex-col items-center p-1 text-blue-600 w-20 transition-all focus:outline-none">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fas fa-home text-base block"></i></div>
+            <span class="text-[9px] font-bold mt-0.5">Beranda</span>
+        </button>
+        <button type="button" onclick="switchTab('tugas')" id="nav-tugas" class="nav-btn flex flex-col items-center p-1 text-slate-400 w-20 transition-all focus:outline-none">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fas fa-tasks text-base block"></i></div>
+            <span class="text-[9px] font-bold mt-0.5">Tugas</span>
+        </button>
+        <button type="button" onclick="switchTab('keuangan')" id="nav-keuangan" class="nav-btn flex flex-col items-center p-1 text-slate-400 w-20 transition-all focus:outline-none">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fas fa-wallet text-base block"></i></div>
+            <span class="text-[9px] font-bold mt-0.5">Uang</span>
+        </button>
+    </nav>
+
+    <!-- JAVASCRIPT KONTROLLER UTUH -->
+    <script>
+        // --- System Helper Notifikasi Toast ---
+        function showToast(message) {
+            let toast = document.getElementById('toast-notification');
+            let msgEl = document.getElementById('toast-message');
+            if(!toast || !msgEl) return;
+            msgEl.innerText = message;
+            toast.classList.remove('hidden', 'opacity-0', 'translate-y-[-100%]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-[-100%]');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 2000);
+        }
+
+        // --- Fitur Export / Backup Data JSON ---
+        function exportData() {
+            try {
+                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataState));
+                let downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `dasbor_backup_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                showToast("Backup data berhasil diunduh!");
+            } catch(e) {
+                alert("Gagal mengunduh backup data!");
+            }
+        }
+
+        // --- Fitur Import / Pulihkan Data JSON ---
+        function importData(event) {
+            let file = event.target.files[0];
+            if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let imported = JSON.parse(e.target.result);
+                    if(imported && typeof imported === 'object') {
+                        dataState = imported;
+                        if(!dataState.tugas) dataState.tugas = [];
+                        if(!dataState.saldo) dataState.saldo = 0;
+                        if(!dataState.jurnal) dataState.jurnal = [];
+                        if(!dataState.transaksi) dataState.transaksi = [];
+                        if(!dataState.kategori) dataState.kategori = [];
+                        simpanData();
+                        showToast("Data berhasil dipulihkan!");
+                    }
+                } catch(err) {
+                    alert("File backup tidak valid!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Gesture Swipe Navigation Antar Tab ---
+        let tabStartX = 0;
+        let tabEndX = 0;
+        const mainContainer = document.getElementById('main-container');
+
+        mainContainer.addEventListener('touchstart', (e) => {
+            tabStartX = e.touches[0].clientX;
+        }, {passive: true});
+
+        mainContainer.addEventListener('touchend', (e) => {
+            tabEndX = e.changedTouches[0].clientX;
+            let diffX = tabStartX - tabEndX;
+            if (tabStartX < 35) return; 
+
+            const order = ['beranda', 'tugas', 'keuangan'];
+            let currentActive = document.querySelector('.tab-content.active').id;
+            let currentIndex = order.indexOf(currentActive);
+
+            if (diffX > 75 && currentIndex < order.length - 1) {
+                switchTab(order[currentIndex + 1]);
+            } else if (diffX < -75 && currentIndex > 0) {
+                switchTab(order[currentIndex - 1]);
+            }
+        }, {passive: true});
+
+        // --- 1. Swipe Sidebar Logic ---
+        let touchStartSidebarX = 0;
+        let touchMoveSidebarX = 0;
+        const sidebarContainer = document.getElementById('sidebar');
+
+        sidebarContainer.addEventListener('touchstart', function(e) {
+            touchStartSidebarX = e.touches[0].clientX;
+        }, {passive: true});
+
+        sidebarContainer.addEventListener('touchmove', function(e) {
+            touchMoveSidebarX = e.touches[0].clientX;
+        }, {passive: true});
+
+        sidebarContainer.addEventListener('touchend', function(e) {
+            if (touchStartSidebarX - touchMoveSidebarX > 50 && touchMoveSidebarX !== 0) {
+                toggleSidebar();
+            }
+            touchStartSidebarX = 0;
+            touchMoveSidebarX = 0;
+        }, {passive: true});
+
+        // --- 2. Modal Kalkulator ---
+        function toggleCalculator() {
+            var modal = document.getElementById('calc-modal');
+            if(modal) {
+                modal.classList.toggle('hidden');
+                if(!modal.classList.contains('hidden')) modal.classList.add('flex');
+                else modal.classList.remove('flex');
+            }
+            var sb = document.getElementById('sidebar');
+            if(!sb.classList.contains('-translate-x-full')) toggleSidebar();
+        }
+
+        function pressCalc(val) {
+            var screen = document.getElementById('calc-screen');
+            if(!screen) return;
+            if(val === 'C') {
+                screen.value = '';
+            } else if(val === 'DEL') {
+                if(screen.value !== 'Error') screen.value = screen.value.slice(0, -1);
+            } else if(val === '=') {
+                try {
+                    if(screen.value) screen.value = eval(screen.value);
+                } catch(e) {
+                    screen.value = 'Error';
+                }
+            } else {
+                if(screen.value === 'Error') screen.value = '';
+                screen.value += val;
+            }
+        }
+
+        // --- 3. State Mood Tracker Jurnal ---
+        let selectedMoodIcon = '😊'; 
+        function selectMood(mood, element) {
+            selectedMoodIcon = mood;
+            let btns = document.querySelectorAll('.mood-btn');
+            btns.forEach(btn => btn.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        // --- 4. Kategori Finansial Kustom Baru ---
+        function tambahKategoriKustom() {
+            var input = document.getElementById('input-kategori-baru');
+            var nama = input.value.trim();
+            if (nama) {
+                if (!dataState.kategori.includes(nama)) {
+                    dataState.kategori.push(nama);
+                    input.value = '';
+                    simpanData();
+                    showToast(`Kategori "${nama}" dibuat!`);
+                } else {
+                    alert(`Kategori "${nama}" sudah terdaftar!`);
+                }
+            }
+        }
+
+        function hapusKategoriKustom(nama, btnEl) {
+            if (confirm(`Hapus kategori kustom "${nama}"?`)) {
+                let tagEl = btnEl.closest('.category-tag');
+                if (tagEl) {
+                    tagEl.classList.add('removing');
+                    setTimeout(() => {
+                        dataState.kategori = dataState.kategori.filter(k => k !== nama);
+                        simpanData();
+                        showToast("Kategori dihapus!");
+                    }, 250);
+                } else {
+                    dataState.kategori = dataState.kategori.filter(k => k !== nama);
+                    simpanData();
+                }
+            }
+        }
+
+        function renderDinamisDropdownKategori() {
+            var sMasuk = document.getElementById('input-masuk-kategori');
+            var sKeluar = document.getElementById('input-keluar-kategori');
+            var wadahList = document.getElementById('list-kategori-kustom');
+            
+            if(!sMasuk || !sKeluar) return;
+
+            var htmlOpsi = '<option value="Umum">Pilih Kategori...</option>';
+            var htmlTags = '';
+
+            for (var i = 0; i < dataState.kategori.length; i++) {
+                var kat = dataState.kategori[i];
+                htmlOpsi += `<option value="${kat}">${kat}</option>`;
+                htmlTags += `<span class="category-tag inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-2.5 py-1.5 rounded-lg font-bold shadow-sm">
+                    ${kat}
+                    <button type="button" onclick="hapusKategoriKustom('${kat}', this)" class="text-slate-400 hover:text-red-500 font-normal focus:outline-none"><i class="fas fa-times text-[10px]"></i></button>
+                </span>`;
+            }
+
+            sMasuk.innerHTML = htmlOpsi;
+            sKeluar.innerHTML = htmlOpsi;
+            if (wadahList) {
+                wadahList.innerHTML = htmlTags || '<span class="text-xs text-slate-400 dark:text-slate-500 italic px-1">Belum ada kategori kustom. Silakan buat di atas!</span>';
+            }
+        }
+
+        // --- 5. Touch Bridge (Anti Ghost Click) ---
+        var touchStartY = 0;
+        var touchEndY = 0;
+        document.addEventListener('touchstart', function(e) { touchStartY = e.changedTouches[0].screenY; }, {passive: true});
+        document.addEventListener('touchend', function(e) {
+            touchEndY = e.changedTouches[0].screenY;
+            if (Math.abs(touchEndY - touchStartY) > 10) return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+            var btn = e.target.closest('button, [onclick]');
+            if (btn) { e.preventDefault(); btn.click(); }
+        }, {passive: false});
+
+        // --- 6. UI Controllers ---
+        function toggleDarkMode() {
+            var html = document.documentElement;
+            var iconMoon = document.getElementById('icon-moon');
+            var iconSun = document.getElementById('icon-sun');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark'); localStorage.setItem('habilDarkMode', 'light');
+                iconMoon.classList.remove('hidden'); iconSun.classList.add('hidden');
+            } else {
+                html.classList.add('dark'); localStorage.setItem('habilDarkMode', 'dark');
+                iconMoon.classList.add('hidden'); iconSun.classList.remove('hidden');
+            }
+        }
+
+        function toggleSettings() {
+            var menu = document.getElementById('settings-menu');
+            if(menu) menu.classList.toggle('hidden');
+        }
+
+        function toggleSidebar() {
+            var sb = document.getElementById('sidebar');
+            var ov = document.getElementById('sidebar-overlay');
+            var sm = document.getElementById('settings-menu');
+            if (sb.classList.contains('-translate-x-full')) {
+                sb.classList.remove('-translate-x-full'); ov.classList.remove('hidden');
+                setTimeout(function() { ov.classList.remove('opacity-0'); }, 10);
+            } else {
+                sb.classList.add('-translate-x-full'); ov.classList.add('opacity-0');
+                if(sm && !sm.classList.contains('hidden')) sm.classList.add('hidden');
+                setTimeout(function() { ov.classList.add('hidden'); }, 300);
+            }
+        }
+
+        function switchTab(tabId) {
+            var tabs = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+            var target = document.getElementById(tabId);
+            if(target) target.classList.add('active');
+            
+            var navs = document.querySelectorAll('.nav-btn');
+            for (var j = 0; j < navs.length; j++) {
+                navs[j].classList.remove('text-blue-600');
+                navs[j].classList.add('text-slate-400');
+                navs[j].querySelector('div').classList.remove('bg-blue-100', 'dark:bg-blue-900/30');
+            }
+            
+            var activeBtn = document.getElementById('nav-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('text-blue-600');
+                activeBtn.querySelector('div').classList.add('bg-blue-100', 'dark:bg-blue-900/30');
+            }
+
+            var fab = document.getElementById('fab-tugas');
+            if(fab) {
+                if(tabId === 'tugas') fab.classList.remove('hidden');
+                else fab.classList.add('hidden');
+            }
+        }
+
+        function bukaJurnal() { toggleSidebar(); switchTab('jurnal'); }
+        function toggleInput(id) { var el = document.getElementById(id); if(el) el.classList.toggle('hidden'); }
+        
+        function toggleStack(stackId, iconId, count) {
+            if (count === 0) return; 
+            var stack = document.getElementById(stackId);
+            var icon = document.getElementById(iconId);
+            if(stack && icon) {
+                stack.classList.toggle('open');
+                if(icon) icon.style.transform = stack.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        }
+
+        // --- 7. Data Core ---
+        var dataState = { tugas: [], saldo: 0, jurnal: [], transaksi: [], kategori: [] };
+
+        function formatRupiah(angka) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka); }
+        
+        function formatTanggal(tglString) {
+            if(!tglString) return '';
+            return new Date(tglString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        document.getElementById('sidebar-overlay').onclick = toggleSidebar;
+
+        function getUrgency(deadline) {
+            if(!deadline) return 'aman';
+            var today = new Date();
+            today.setHours(0,0,0,0);
+            var dlDate = new Date(deadline);
+            var diffDays = Math.ceil((dlDate - today) / (1000 * 60 * 60 * 24));
+
+            if(diffDays <= 5) return 'mendesak';
+            if(diffDays <= 10) return 'tenggang';
+            return 'aman';
+        }
+
+        function renderWidgetCard(task) {
+            var urg = getUrgency(task.deadline);
+            var bgClass = 'bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-800/30';
+            var textClass = 'text-green-600 dark:text-green-400';
+            var labelUrgency = 'Aman';
+
+            if (urg === 'mendesak') {
+                bgClass = 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/30';
+                textClass = 'text-red-600 dark:text-red-400';
+                labelUrgency = 'Mendesak';
+            } else if (urg === 'tenggang') {
+                bgClass = 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800/30';
+                textClass = 'text-orange-600 dark:text-orange-400';
+                labelUrgency = 'Tenggang';
+            }
+
+            var dateObj = new Date(task.deadline);
+            var tglNum = dateObj.getDate();
+            var blnStr = dateObj.toLocaleDateString('id-ID', { month: 'short' });
+
+            return `<div class="flex items-start gap-4 p-3 ${bgClass} rounded-xl border transition-colors shadow-sm">
+                <div class="w-11 h-11 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex flex-col items-center justify-center shrink-0 shadow-sm">
+                    <span class="text-[9px] font-bold uppercase leading-none">${blnStr}</span>
+                    <span class="text-base font-black leading-none mt-1">${tglNum}</span>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-slate-800 dark:text-white">${task.nama}</p>
+                    <p class="text-[10px] ${textClass} mt-1 font-bold tracking-wider">${labelUrgency}</p>
+                </div>
+            </div>`;
+        }
+
+        function renderRegulerWidgetCard(task) {
+            var bgClass = 'bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30';
+            return `<div class="flex items-center gap-4 p-3 ${bgClass} rounded-xl border transition-colors hover:shadow-sm">
+                <div class="w-11 h-11 rounded-lg bg-white dark:bg-slate-700 text-blue-500 flex items-center justify-center shrink-0 shadow-sm"><i class="fas fa-book text-lg"></i></div>
+                <div class="flex-1"><p class="text-sm font-bold text-slate-800 dark:text-white">${task.nama}</p></div>
+            </div>`;
+        }
+
+        function renderTrxCard(trx) {
+            var isMasuk = trx.jenis === 'masuk';
+            var sign = isMasuk ? '+' : '-';
+            var colorNominal = isMasuk ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+            var bgIcon = isMasuk ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-600';
+            var iconTrx = 'fa-tag';
+
+            return `<li class="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg ${bgIcon} flex items-center justify-center shrink-0 shadow-inner"><i class="fas ${iconTrx} text-xs"></i></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-800 dark:text-white">${trx.catatan}</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-medium">${trx.tanggal} • <span class="italic text-blue-500 dark:text-blue-400 font-bold">${trx.kategori || 'Umum'}</span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-black ${colorNominal}">${sign} ${formatRupiah(trx.nominal)}</span>
+                    <button type="button" onclick="hapusTransaksi(${trx.id})" class="text-slate-300 hover:text-red-500 dark:text-slate-600 p-1 focus:outline-none"><i class="fas fa-trash text-xs"></i></button>
+                </div>
+            </li>`;
+        }
+
+        function generateTaskHTML(task) {
+            var btnSelesai = task.selesai 
+                ? `<div class="flex gap-1"><button type="button" onclick="toggleStatusTugas(${task.id})" class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-500 flex items-center justify-center focus:outline-none"><i class="fas fa-undo text-xs"></i></button></div>`
+                : `<button type="button" onclick="toggleStatusTugas(${task.id})" class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-600 text-slate-300 dark:text-slate-500 hover:border-green-500 dark:hover:border-green-500 hover:bg-green-500 hover:text-white flex items-center justify-center transition focus:outline-none"><i class="fas fa-check text-xs"></i></button>`;
+            
+            var btnHapus = task.selesai 
+                ? `<button type="button" onclick="hapusTugasPermanen(${task.id})" class="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 p-2 focus:outline-none"><i class="fas fa-trash"></i></button>` 
+                : '';
+
+            var urgensi = getUrgency(task.deadline);
+            var colorClass = 'text-green-500';
+            var badgeText = 'Aman';
+            if(urgensi === 'mendesak') { colorClass = 'text-red-500'; badgeText = 'Mendesak'; }
+            else if(urgensi === 'tenggang') { colorClass = 'text-orange-500'; badgeText = 'Tenggang'; }
+
+            var badgeDL = task.deadline && !task.selesai 
+                ? `<p class="text-[10px] font-bold ${colorClass} mt-1 flex items-center gap-1"><i class="fas fa-clock"></i> ${formatTanggal(task.deadline)} (${badgeText})</p>` 
+                : '';
+            
+            var stylingTeks = task.selesai ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-slate-700 dark:text-slate-200 font-bold';
+
+            return `<li class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between transition-colors"><div class="flex-1 pr-3"><p class="text-sm ${stylingTeks}">${task.nama}</p>${badgeDL}</div><div class="flex items-center gap-2">${btnSelesai}${btnHapus}</div></li>`;
+        }
+
+        function perbaruiTampilan() {
+            var totalHitungSaldo = 0;
+            var totalMasuk = 0;
+            var totalKeluar = 0;
+
+            for(var s = 0; s < dataState.transaksi.length; s++) {
+                var itemTrx = dataState.transaksi[s];
+                if(itemTrx.jenis === 'masuk') {
+                    totalHitungSaldo += itemTrx.nominal;
+                    totalMasuk += itemTrx.nominal;
+                } else {
+                    totalHitungSaldo -= itemTrx.nominal;
+                    totalKeluar += itemTrx.nominal;
+                }
+            }
+            dataState.saldo = totalHitungSaldo;
+
+            document.getElementById('stat-total-masuk').innerText = formatRupiah(totalMasuk);
+            document.getElementById('stat-total-keluar').innerText = formatRupiah(totalKeluar);
+
+            var totalGrup = totalMasuk + totalKeluar;
+            var pctMasuk = totalGrup > 0 ? Math.round((totalMasuk / totalGrup) * 100) : 50;
+            var pctKeluar = totalGrup > 0 ? (100 - pctMasuk) : 50;
+
+            var barM = document.getElementById('bar-masuk');
+            var barK = document.getElementById('bar-keluar');
+            var ratioTxt = document.getElementById('ratio-text');
+
+            if(barM && barK && ratioTxt) {
+                barM.style.width = pctMasuk + '%';
+                barK.style.width = pctKeluar + '%';
+                ratioTxt.innerText = pctMasuk + '% Masuk / ' + pctKeluar + '% Keluar';
+            }
+
+            var aktif = [], selesai = [], dl = [], reg = [];
+            for(var i=0; i<dataState.tugas.length; i++) {
+                var t = dataState.tugas[i];
+                if(t.selesai) { selesai.push(t); } 
+                else {
+                    aktif.push(t);
+                    if(t.deadline) dl.push(t); else reg.push(t);
+                }
+            }
+
+            dl.sort(function(a, b) { return new Date(a.deadline) - new Date(b.deadline); });
+
+            document.getElementById('stat-tugas-aktif').innerText = aktif.length;
+            document.getElementById('stat-tugas-selesai').innerText = selesai.length;
+            document.getElementById('stat-saldo').innerText = formatRupiah(dataState.saldo);
+            document.getElementById('count-deadline').innerText = dl.length;
+            document.getElementById('count-reguler').innerText = reg.length;
+            document.getElementById('count-completed').innerText = selesai.length;
+            document.getElementById('count-transaksi').innerText = dataState.transaksi.length;
+
+            var idPanah = ['icon-deadline', 'icon-reguler', 'icon-completed', 'icon-riwayat-keuangan'];
+            var kondisiPanah = [dl.length > 0, reg.length > 0, selesai.length > 0, dataState.transaksi.length > 0];
+            
+            for(var p=0; p<idPanah.length; p++) {
+                var elPanah = document.getElementById(idPanah[p]);
+                if(elPanah) {
+                    if(kondisiPanah[p]) elPanah.classList.remove('hidden');
+                    else elPanah.classList.add('hidden');
+                }
+            }
+
+            renderDinamisDropdownKategori();
+
+            function renderStack(arr, elId) {
+                var w = document.getElementById(elId);
+                if(!w) return;
+                w.innerHTML = arr.length > 0 ? arr.map(t => generateTaskHTML(t)).join('') : '';
+            }
+
+            renderStack(dl, 'stack-deadline');
+            renderStack(reg, 'stack-reguler');
+            renderStack(selesai, 'stack-completed');
+
+            // Widget Deadline Beranda
+            var wDeadline = document.getElementById('widget-deadline-container');
+            if (wDeadline) {
+                if (dl.length > 0) {
+                    var topTask = dl[0];
+                    var restTasks = dl.slice(1);
+                    var htmlTop = renderWidgetCard(topTask);
+                    var htmlRest = '';
+
+                    if (restTasks.length > 0) {
+                        var restCards = restTasks.map(function(t) { return renderWidgetCard(t); }).join('');
+                        htmlRest = `<div class="mt-3">
+                            <button type="button" onclick="toggleStack('stack-deadline-lainnya', 'icon-deadline-lainnya', 1)" class="w-full bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold p-3 rounded-xl flex justify-between items-center text-xs transition-colors focus:outline-none">
+                                <span><i class="fas fa-layer-group mr-1.5 text-blue-500"></i>Deadline Lainnya (${restTasks.length})</span>
+                                <i class="fas fa-chevron-down text-slate-400 transform transition-transform duration-300" id="icon-deadline-lainnya"></i>
+                            </button>
+                            <div id="stack-deadline-lainnya" class="accordion-content space-y-2 mt-2">
+                                ${restCards}
+                            </div>
+                        </div>`;
+                    }
+                    wDeadline.innerHTML = htmlTop + htmlRest;
+                } else {
+                    wDeadline.innerHTML = '<div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800/30 text-center"><p class="text-sm font-bold text-green-600 dark:text-green-400">Belum ada tugas deadline!</p></div>';
+                }
+            }
+
+            // Widget Reguler Beranda
+            var wReguler = document.getElementById('widget-reguler-container');
+            if (wReguler) {
+                if (reg.length > 0) {
+                    var htmlRegCards = reg.map(function(t) { return renderRegulerWidgetCard(t); }).join('');
+                    wReguler.innerHTML = `<div>
+                        <button type="button" onclick="toggleStack('stack-beranda-reguler', 'icon-beranda-reguler', ${reg.length})" class="w-full bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold p-3 rounded-xl flex justify-between items-center text-xs transition-colors focus:outline-none">
+                            <span><i class="fas fa-layer-group mr-1.5 text-blue-500"></i>Lihat Tugas Reguler (${reg.length})</span>
+                            <i class="fas fa-chevron-down text-slate-400 transform transition-transform duration-300" id="icon-beranda-reguler"></i>
+                        </button>
+                        <div id="stack-beranda-reguler" class="accordion-content space-y-2 mt-2">
+                            ${htmlRegCards}
+                        </div>
+                    </div>`;
+                } else {
+                    wReguler.innerHTML = '<div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30 text-center"><p class="text-sm font-bold text-blue-600 dark:text-blue-400">Belum ada tugas reguler!</p></div>';
+                }
+            }
+
+            // Render Stack Transaksi Keuangan
+            var rKeuangan = document.getElementById('stack-riwayat-keuangan');
+            if(rKeuangan) {
+                if(dataState.transaksi.length > 0) {
+                    var htmlTrxList = "";
+                    for(var n = dataState.transaksi.length - 1; n >= 0; n--) {
+                        htmlTrxList += renderTrxCard(dataState.transaksi[n]);
+                    }
+                    rKeuangan.innerHTML = htmlTrxList;
+                } else {
+                    rKeuangan.innerHTML = ''; 
+                }
+            }
+
+            // Render Jurnal
+            var lj = document.getElementById('daftar-jurnal');
+            var kTxt = document.getElementById('jurnal-kosong-teks');
+            if(lj) {
+                if(dataState.jurnal.length > 0) {
+                    if(kTxt) kTxt.classList.add('hidden');
+                    var htmlJurnal = "";
+                    for(var m = dataState.jurnal.length - 1; m >= 0; m--) {
+                        var j = dataState.jurnal[m];
+                        var emojiMood = j.mood || '😊';
+                        htmlJurnal += `<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden transition-colors"><div class="w-1 h-full bg-blue-500 absolute left-0 top-0"></div><div class="flex justify-between items-start"><div class="text-[10px] text-slate-400 dark:text-slate-500 mb-1 pl-2 font-bold">${j.tanggal}</div><div class="flex items-center gap-2"><span class="text-sm" title="Suasana Hati">${emojiMood}</span><button type="button" onclick="hapusJurnal(${j.id})" class="text-slate-300 hover:text-red-500 dark:text-slate-500 focus:outline-none transition-colors"><i class="fas fa-trash text-xs"></i></button></div></div><h3 class="font-bold text-slate-800 dark:text-white text-sm mb-1 pl-2">${j.judul}</h3><p class="text-slate-600 dark:text-slate-300 text-xs pl-2 leading-relaxed">${j.isi}</p></div>`;
+                    }
+                    lj.innerHTML = htmlJurnal;
+                } else {
+                    lj.innerHTML = '';
+                    if(kTxt) kTxt.classList.remove('hidden');
+                }
+            }
+        }
+
+        function simpanData() {
+            try { localStorage.setItem('dasborSolidV2', JSON.stringify(dataState)); } catch(e) {}
+            perbaruiTampilan();
+        }
+
+        function tambahTugas() {
+            var nama = document.getElementById('input-tugas-nama').value.trim();
+            var dl = document.getElementById('input-tugas-deadline').value;
+            if (nama) {
+                dataState.tugas.push({ id: Date.now(), nama: nama, deadline: dl || null, selesai: false });
+                document.getElementById('input-tugas-nama').value = ''; document.getElementById('input-tugas-deadline').value = '';
+                toggleInput('tugas-input-area');
+                if (dl) {
+                    document.getElementById('stack-deadline').classList.add('open');
+                    var dArrow = document.getElementById('icon-deadline');
+                    if(dArrow) dArrow.style.transform = 'rotate(180deg)';
+                } else {
+                    document.getElementById('stack-reguler').classList.add('open');
+                    var rArrow = document.getElementById('icon-reguler');
+                    if(rArrow) rArrow.style.transform = 'rotate(180deg)';
+                }
+                simpanData();
+                showToast("Tugas berhasil disimpan!");
+            }
+        }
+
+        function toggleStatusTugas(id) {
+            var totalAktifSebelum = dataState.tugas.filter(t => !t.selesai).length;
+            
+            for(var i=0; i<dataState.tugas.length; i++) {
+                if(dataState.tugas[i].id === id) {
+                    dataState.tugas[i].selesai = !dataState.tugas[i].selesai;
+                    break;
+                }
+            }
+
+            var totalAktifSesudah = dataState.tugas.filter(t => !t.selesai).length;
+            simpanData();
+
+            if (totalAktifSebelum > 0 && totalAktifSesudah === 0) {
+                showToast("Luar Biasa! Semua Tugas Selesai 🎉");
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+                }
+            } else {
+                showToast("Status tugas diperbarui!");
+            }
+        }
+
+        function hapusTugasPermanen(id) { 
+            if(confirm("Hapus tugas ini secara permanen?")) { 
+                var newTugas = [];
+                for(var i=0; i<dataState.tugas.length; i++) {
+                    if(dataState.tugas[i].id !== id) newTugas.push(dataState.tugas[i]);
+                }
+                dataState.tugas = newTugas; 
+                simpanData(); 
+                showToast("Tugas dihapus!");
+            } 
+        }
+        
+        function tambahUang(jenis) {
+            var inputNominal = document.getElementById(jenis === 'masuk' ? 'input-masuk-nominal' : 'input-keluar-nominal');
+            var inputCatatan = document.getElementById(jenis === 'masuk' ? 'input-masuk-catatan' : 'input-keluar-catatan');
+            var inputKategori = document.getElementById(jenis === 'masuk' ? 'input-masuk-kategori' : 'input-keluar-kategori');
+            
+            var nilai = parseInt(inputNominal.value);
+            var ket = inputCatatan.value.trim();
+            var kat = inputKategori.value;
+
+            if (nilai && nilai > 0) { 
+                var defaultKet = jenis === 'masuk' ? 'Pemasukan' : 'Pengeluaran';
+                var tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                
+                dataState.transaksi.push({
+                    id: Date.now(),
+                    jenis: jenis,
+                    nominal: nilai,
+                    catatan: ket || defaultKet,
+                    kategori: kat || 'Umum',
+                    tanggal: tgl
+                });
+
+                inputNominal.value = ''; 
+                inputCatatan.value = '';
+                inputKategori.value = 'Umum';
+                
+                document.getElementById('stack-riwayat-keuangan').classList.add('open');
+                var rkArrow = document.getElementById('icon-riwayat-keuangan');
+                if(rkArrow) rkArrow.style.transform = 'rotate(180deg)';
+                
+                simpanData(); 
+                showToast("Transaksi keuangan dicatat!");
+            }
+        }
+
+        function hapusTransaksi(id) {
+            if(confirm("Hapus catatan riwayat transaksi ini?")) {
+                var newTrx = [];
+                for(var i=0; i<dataState.transaksi.length; i++) {
+                    if(dataState.transaksi[i].id !== id) newTrx.push(dataState.transaksi[i]);
+                }
+                dataState.transaksi = newTrx;
+                simpanData();
+                showToast("Transaksi dihapus!");
+            }
+        }
+
+        function tambahJurnal() {
+            var jud = document.getElementById('jurnal-judul').value.trim();
+            var isi = document.getElementById('jurnal-isi').value.trim();
+            if (jud || isi) {
+                var tgl = new Date().toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+                
+                dataState.jurnal.push({ 
+                    id: Date.now(), 
+                    judul: jud || 'Catatan', 
+                    isi: isi, 
+                    mood: selectedMoodIcon, 
+                    tanggal: tgl 
+                });
+                
+                document.getElementById('jurnal-judul').value = ''; 
+                document.getElementById('jurnal-isi').value = '';
+                toggleInput('jurnal-input-area'); 
+                simpanData();
+                showToast("Catatan jurnal tersimpan!");
+            }
+        }
+
+        function hapusJurnal(id) {
+            if(confirm("Hapus jurnal ini?")) {
+                var newJurnal = [];
+                for(var i=0; i<dataState.jurnal.length; i++) {
+                    if(dataState.jurnal[i].id !== id) newJurnal.push(dataState.jurnal[i]);
+                }
+                dataState.jurnal = newJurnal; 
+                simpanData();
+                showToast("Jurnal dihapus!");
+            }
+        }
+
+        function resetData() {
+            if(confirm("Yakin ingin menghapus seluruh data?")) { 
+                dataState = { tugas: [], saldo: 0, jurnal: [], transaksi: [], kategori: [] }; 
+                simpanData(); 
+                toggleSidebar();
+                showToast("Seluruh data telah dibersihkan!");
+            }
+        }
+
+        function inisialisasiSistem() {
+            try { var saved = localStorage.getItem('dasborSolidV2'); if (saved) dataState = JSON.parse(saved); } catch(e) {}
+            if(!dataState.tugas) dataState.tugas = [];
+            if(!dataState.saldo) dataState.saldo = 0;
+            if(!dataState.jurnal) dataState.jurnal = [];
+            if(!dataState.transaksi) dataState.transaksi = [];
+            if(!dataState.kategori) dataState.kategori = [];
+
+            for(var x=0; x<dataState.jurnal.length; x++) { if(!dataState.jurnal[x].id) dataState.jurnal[x].id = Date.now() + x; }
+            
+            document.getElementById('nav-beranda').querySelector('div').classList.add('bg-blue-100', 'dark:bg-blue-900/30');
+
+            var savedTheme = localStorage.getItem('habilDarkMode');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('icon-moon').classList.add('hidden');
+                document.getElementById('icon-sun').classList.remove('hidden');
+            }
+
+            perbaruiTampilan();
+
+            setTimeout(() => {
+                let loader = document.getElementById('skeleton-loader');
+                if(loader) {
+                    loader.classList.add('opacity-0');
+                    setTimeout(() => loader.classList.add('hidden'), 500);
+                }
+            }, 600);
+        }
+
+        window.onload = inisialisasiSistem;
+    </script>
+</body>
+</html>
